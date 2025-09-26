@@ -64,7 +64,7 @@ class CCPRF(object):
     msk_dir = 'hp'
     face_dir = 'head+'  # face
 
-    def __init__(self, name, root='datasets/SC-ReID'):
+    def __init__(self, name, root='datasets/SC-ReID'):##这里要按照实际路径修改
 
         self.name = name
         self.root = root
