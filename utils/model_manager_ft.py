@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"   # 放最前面，强制只用一张卡训练
 import torch
 import torch.nn as nn
 from torch.nn import init
@@ -7,7 +9,6 @@ import pretrainedmodels
 import timm
 # from utils import load_state_dict_mute
 import ssl
-
 ssl._create_default_https_context = ssl._create_unverified_context
 
 ######################################################################
@@ -256,7 +257,15 @@ class ft_net_convnext(nn.Module):
 class ft_net_hr(nn.Module):
     def __init__(self, class_num, droprate=0.5, circle=False, linear_num=512):
         super().__init__()
-        model_ft = timm.create_model('hrnet_w18', pretrained=True)
+        #model_ft = timm.create_model('hrnet_w18', pretrained=True)修改一下
+        # 1. 先不让 timm 去下载
+        model_ft = timm.create_model('hrnet_w18', pretrained=False)
+        # 2. 手工加载权重
+        from safetensors.torch import load_file
+        ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        state_dict = load_file(os.path.join(ROOT,
+                                            'pretrain/hrnet_w18_ms_aug_in1k/model.safetensors'))##改成相对路径
+        model_ft.load_state_dict(state_dict, strict=False)
         # avg pooling to global pooling
         # model_ft.avgpool = nn.AdaptiveAvgPool2d((1,1))
         model_ft.classifier = nn.Sequential()  # save memory
