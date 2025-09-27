@@ -2,6 +2,7 @@
 import argparse
 import datetime
 import os
+import random
 import shutil
 import torch
 import copy
@@ -25,6 +26,12 @@ from torch.utils.data import DataLoader
 import datetime
 import os
 
+from seed import set_seed
+set_seed(42)          # 以后改数字就能换种子
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 def main(cfg):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -47,12 +54,17 @@ def main(cfg):
     train_loader = DataLoader(
         ImageDatasetHpMask(dataset.train_data, cfg.height, cfg.width, train_transforms),
         batch_size=cfg.batch_size, sampler=RandomIdentitySamplerHp(dataset.train_data, cfg.batch_size, 4),
-        num_workers=8, collate_fn=train_collate)
+        num_workers=8, collate_fn=train_collate,
+        worker_init_fn=seed_worker,
+        generator=torch.Generator().manual_seed(42)
+    )
 
     test_dataset = data_manager.init_test_dataset(name=cfg.dataset)
     num_test = len(test_dataset.query_data)
     test_loader = DataLoader(ImageDataset(test_dataset.test_data, cfg.height, cfg.width, test_transforms),
-                                 batch_size=1, shuffle=False, num_workers=8, collate_fn=origin_test_collate)
+                             batch_size=1, shuffle=False, num_workers=8, collate_fn=origin_test_collate,
+                             worker_init_fn=seed_worker,
+                             generator=torch.Generator().manual_seed(42))
     # test_loader = DataLoader(ImageDatasetHpMask(dataset.test_data, cfg.height, cfg.width, test_transforms),
     # batch_size=1, shuffle=False, num_workers=8, collate_fn=test_collate)
 
