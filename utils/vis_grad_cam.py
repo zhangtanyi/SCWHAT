@@ -15,7 +15,7 @@ def CAM(im_path, save_path):
     # model = vgg19(pretrained=True)
     model = model_manager_ft.init_model(name='hr', class_num=9449)
     model = torch.nn.DataParallel(model).cuda()
-    model_wts = torch.load('imagenet/vcclothesHrnetbaseline.pth')
+    model_wts = torch.load('imagenet/vcclothesHrnetbaseline.pth')#/mnt/disk/zty/SC-ReID/logs/vcclothes/checkpoint.pth
     model.load_state_dict(model_wts['state_dict'])
     if torch.cuda.is_available():
         test_image = test_image.cuda()

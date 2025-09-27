@@ -107,7 +107,7 @@ class DiffAttention2D(nn.Module):
     输出: (B, C, H, W)
     用法：直接替换 CBAMLayer
     """
-    def __init__(self, channel, reduction=16, lambda_init=0.8):
+    def __init__(self, channel, reduction=16, lambda_init=0.4):
         super().__init__()
         self.channel = channel
         self.reduction = reduction

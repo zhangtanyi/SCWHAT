@@ -22,10 +22,18 @@ from utils.inference import inference_prcc_global, inference_prcc_visual_rank, i
 from utils.optimizer import make_optimizer_with_triplet, WarmupMultiStepLR
 from torch.utils.data import DataLoader
 
+import datetime
+import os
+
 
 def main(cfg):
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    log_dir = os.path.join('logs', cfg.dataset, timestamp)
+    os.makedirs(log_dir, exist_ok=True)
 
-
+    import json
+    with open(os.path.join(log_dir, 'config.json'), 'w', encoding='utf-8') as f:
+        json.dump(vars(cfg), f, ensure_ascii=False, indent=2)
     # loading dataset
     print('loading dataset')
 
