@@ -100,6 +100,59 @@ class CBAMLayer(nn.Module):
         x = spatial_out * x
         return x
 
+class DiffAttention2D(nn.Module):
+    """
+    2D 版本的 Differential Attention，适配 CNN 结构。
+    输入: (B, C, H, W)
+    输出: (B, C, H, W)
+    用法：直接替换 CBAMLayer
+    """
+    def __init__(self, channel, reduction=16, lambda_init=0.8):
+        super().__init__()
+        self.channel = channel
+        self.reduction = reduction
+        self.lambda_init = lambda_init
+
+        # 通道注意力部分：类似 CBAM，但用 DiffAttention 思想
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        # 两个分支的 MLP（模拟 Q/K split）
+        self.mlp1 = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channel // reduction, channel, 1, bias=False)
+        )
+        self.mlp2 = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channel // reduction, channel, 1, bias=False)
+        )
+
+        # 可学习的 lambda 参数（通道级别）
+        self.lambda_weight = nn.Parameter(torch.tensor(lambda_init))
+
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+
+        # 通道注意力：avg + max
+        avg_out = self.avg_pool(x)  # (B, C, 1, 1)
+        max_out = self.max_pool(x)
+
+        # 两个分支的注意力
+        attn1 = self.sigmoid(self.mlp1(avg_out))
+        attn2 = self.sigmoid(self.mlp2(max_out))
+
+        # 差分注意力
+        diff_attn = self.sigmoid(attn1 - self.lambda_weight * attn2)
+
+        # 通道加权
+        x = x * diff_attn
+
+        return x
+
 class GLOBAL(nn.Module):
     """
     Part-based Convolutional Baseline
@@ -141,7 +194,8 @@ class GLOBAL(nn.Module):
         self.classifier.apply(weights_init_classifier)
         self.cbamlayer1 = CBAMLayer(512)
         self.cbamlayer2 = CBAMLayer(1024)
-        self.cbamlayer3 = CBAMLayer(2048)
+        #self.cbamlayer3 = CBAMLayer(2048)
+        self.cbamlayer3 = DiffAttention2D(2048, reduction=16, lambda_init=0.8)##尝试使用diffattn
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None

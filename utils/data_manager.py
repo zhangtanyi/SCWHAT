@@ -203,7 +203,7 @@ class Origin_dataset(object):
         __factory = {
             'prcc': 'prcc/rgb/test',
             'celeb': 'Celeb-reID',
-            'ltcc': 'LTCC_ReID',
+            'ltcc': 'SC-ReID/LTCC',
             'last': 'last',
             'vcclothes': 'SC-ReID/VC-Clothes',
             'vsclothes': 'VS-clothes/01',
