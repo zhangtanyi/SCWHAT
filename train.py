@@ -86,11 +86,6 @@ def main(cfg):
     scheduler = WarmupMultiStepLR(trainer, milestones=[40, 80], gamma=0.1, warmup_factor=1.0 / 3, warmup_iters=500,
                                   warmup_method="linear", last_epoch=-1,)
 
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-    log_dir_name = str('logs/' + cfg.dataset)
-    log_dir = os.path.join(working_dir, log_dir_name)
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
 
     if cfg.test:
         # Test
@@ -275,14 +270,11 @@ def train(model, model_face, train_loader, test_loader, loss_fn, loss_face_fn, o
     f.close()
 
 
-def save_checkpoint(state, is_best, fpath):
-    if not os.path.exists(fpath):
-        os.makedirs(fpath)
-
-    fpath = os.path.join(fpath, 'checkpoint.pth')
-    torch.save(state, fpath)
+def save_checkpoint(state, is_best, fpath):  # fpath 已经是 log_dir
+    checkpoint_path = os.path.join(fpath, 'checkpoint.pth')
+    torch.save(state, checkpoint_path)
     if is_best:
-        shutil.copy(fpath, os.path.join(os.path.dirname(fpath), 'checkpoint_best.pth')) 
+        shutil.copy(checkpoint_path, os.path.join(fpath, 'checkpoint_best.pth'))
 
 if __name__ == '__main__':
 

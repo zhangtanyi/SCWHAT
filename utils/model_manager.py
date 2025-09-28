@@ -1,7 +1,7 @@
 
 import torch
 from torch import nn
-
+from timm.models.layers import DropBlock2d
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
@@ -107,7 +107,7 @@ class DiffAttention2D(nn.Module):
     输出: (B, C, H, W)
     用法：直接替换 CBAMLayer
     """
-    def __init__(self, channel, reduction=16, lambda_init=0.4):
+    def __init__(self, channel, reduction=16, lambda_init=0.8):
         super().__init__()
         self.channel = channel
         self.reduction = reduction
@@ -196,6 +196,7 @@ class GLOBAL(nn.Module):
         self.cbamlayer2 = CBAMLayer(1024)
         #self.cbamlayer3 = CBAMLayer(2048)
         self.cbamlayer3 = DiffAttention2D(2048, reduction=16, lambda_init=0.8)##尝试使用diffattn
+        self.db = DropBlock2d(drop_prob=0.1, block_size=7)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -242,6 +243,7 @@ class GLOBAL(nn.Module):
         x = self.layer3(x)
         # x = self.cbamlayer2(x)
         x = self.layer4(x)
+        x = self.db(x)
         # x = self.cbamlayer3(x)
         return x
 
